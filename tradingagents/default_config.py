@@ -35,4 +35,17 @@ DEFAULT_CONFIG = {
     "tool_vendors": {
         # Example: "get_stock_data": "alpha_vantage",  # Override category default
     },
+    # Market extensions
+    "market_extensions": {
+        "enabled": True,
+        "ashare": {
+            "enabled": True,
+            "primary_price_provider": "tushare",
+            "fallback_price_providers": ["akshare", "baostock"],
+            "primary_fundamental_provider": "tushare",
+            "primary_news_provider": "google_cn",
+            # Symbol-level sentiment (Xueqiu) is NOT supported in this extension
+            "enable_symbol_level_sentiment": False,
+        },
+    },
 }

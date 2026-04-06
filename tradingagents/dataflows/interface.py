@@ -27,6 +27,20 @@ from .alpha_vantage_common import AlphaVantageRateLimitError
 # Configuration and routing logic
 from .config import get_config
 
+# Market extension (lazy import to avoid circular deps)
+_ashare_ext = None
+
+
+def _get_ashare_ext():
+    global _ashare_ext
+    if _ashare_ext is None:
+        try:
+            from tradingagents.extensions.ashare import routing as ext
+            _ashare_ext = ext
+        except ImportError:
+            _ashare_ext = None
+    return _ashare_ext
+
 # Tools organized by category
 TOOLS_CATEGORIES = {
     "core_stock_apis": {
@@ -132,7 +146,22 @@ def get_vendor(category: str, method: str = None) -> str:
     return config.get("data_vendors", {}).get(category, "default")
 
 def route_to_vendor(method: str, *args, **kwargs):
-    """Route method calls to appropriate vendor implementation with fallback support."""
+    """Route method calls to appropriate vendor implementation with fallback support.
+
+    For A-share tickers, routes through the market-aware extension layer.
+    For US/HK tickers, uses the existing vendor chain.
+    """
+    # Check if this looks like an A-share ticker (6-digit codes, .SS/.SZ suffix)
+    ticker = _get_ticker_from_args(args, kwargs)
+    if ticker and _is_ashare_ticker(ticker):
+        ext = _get_ashare_ext()
+        if ext is not None:
+            result = ext.route_extension(method, *args, **kwargs)
+            if result is not None:
+                return result
+            # Fall through to default routing if extension returns None
+
+    # Default upstream routing for US/HK
     category = get_category_for_method(method)
     vendor_config = get_vendor(category, method)
     primary_vendors = [v.strip() for v in vendor_config.split(',')]
@@ -160,3 +189,29 @@ def route_to_vendor(method: str, *args, **kwargs):
             continue  # Only rate limits trigger fallback
 
     raise RuntimeError(f"No available vendor for '{method}'")
+
+
+def _get_ticker_from_args(args, kwargs) -> str | None:
+    """Extract ticker symbol from positional/keyword args."""
+    if args:
+        return str(args[0])
+    return kwargs.get("symbol") or kwargs.get("ticker")
+
+
+def _is_ashare_ticker(ticker: str) -> bool:
+    """Quick check if ticker looks like an A-share code.
+
+    Checks:
+    - 6-digit pure number (A-share codes)
+    - Already has .SS or .SZ suffix
+    """
+    if not ticker:
+        return False
+    t = ticker.strip()
+    # Already has exchange suffix
+    if t.upper().endswith((".SS", ".SZ", ".BJ")):
+        return True
+    # 6-digit code
+    if len(t) == 6 and t.isdigit():
+        return True
+    return False

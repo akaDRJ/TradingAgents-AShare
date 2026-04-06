@@ -8,7 +8,7 @@ from tradingagents.llm_clients.model_catalog import get_model_options
 
 console = Console()
 
-TICKER_INPUT_EXAMPLES = "Examples: SPY, CNC.TO, 7203.T, 0700.HK"
+TICKER_INPUT_EXAMPLES = "Examples: SPY, CNC.TO, 7203.T, 0700.HK, 600519, 000001"
 
 ANALYST_ORDER = [
     ("Market Analyst", AnalystType.MARKET),
@@ -39,8 +39,22 @@ def get_ticker() -> str:
 
 
 def normalize_ticker_symbol(ticker: str) -> str:
-    """Normalize ticker input while preserving exchange suffixes."""
-    return ticker.strip().upper()
+    """Normalize ticker input while preserving exchange suffixes.
+
+    For A-share, automatically appends .SS/.SZ suffix based on code range.
+    """
+    raw = ticker.strip()
+    if not raw:
+        return raw.upper()
+
+    # Try to use the extension layer for normalization
+    try:
+        from tradingagents.extensions.ashare import normalize_ticker
+        normalized, market = normalize_ticker(raw)
+        return normalized
+    except ImportError:
+        # Fallback: basic uppercase
+        return raw.upper()
 
 
 def get_analysis_date() -> str:

@@ -43,6 +43,16 @@ class CryptoExtensionRegistrationTests(unittest.TestCase):
 
 
 class CryptoNewsRoutingTests(unittest.TestCase):
+    def setUp(self):
+        reset_extensions_for_test()
+        ashare.ensure_registered()
+        crypto.ensure_registered()
+
+    def tearDown(self):
+        reset_extensions_for_test()
+        ashare.ensure_registered()
+        crypto.ensure_registered()
+
     def test_crypto_unsupported_method_returns_extension_message(self):
         extension = resolve_extension("BTCUSDT")
         self.assertIsNotNone(extension)

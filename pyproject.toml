@@ -30,6 +30,10 @@ dependencies = [
     "tqdm>=4.67.1",
     "typing-extensions>=4.14.0",
     "yfinance>=0.2.63",
+    # A-share market data providers
+    "akshare>=1.16.0",
+    "baostock>=0.8.8",
+    "tushare>=1.4.20",
 ]
 
 [project.scripts]

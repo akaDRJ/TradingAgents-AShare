@@ -9,8 +9,8 @@ MARKET_POLICY = {
         "get_balance_sheet": None,
         "get_cashflow": None,
         "get_income_statement": None,
-        "get_news": ["public_news"],
-        "get_global_news": ["public_news"],
+        "get_news": None,
+        "get_global_news": None,
         "get_insider_transactions": None,
     }
 }

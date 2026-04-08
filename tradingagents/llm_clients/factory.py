@@ -43,6 +43,17 @@ def create_llm_client(
     if provider_lower == "anthropic":
         return AnthropicClient(model, base_url, **kwargs)
 
+    if provider_lower == "minimax":
+        import os
+
+        api_key = kwargs.pop("api_key", None) or os.environ.get("MINIMAX_API_KEY")
+        return AnthropicClient(
+            model,
+            base_url="https://api.minimaxi.com/anthropic",
+            api_key=api_key,
+            **kwargs,
+        )
+
     if provider_lower == "google":
         return GoogleClient(model, base_url, **kwargs)
 

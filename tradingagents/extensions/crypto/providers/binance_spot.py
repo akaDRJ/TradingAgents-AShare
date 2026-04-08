@@ -31,13 +31,26 @@ class BinanceSpotProvider:
             if end_date
             else None
         )
+        effective_end_dt = end_dt
+        if start_dt is not None and effective_end_dt is None:
+            effective_end_dt = datetime.now(UTC)
+
         if start_dt is not None:
             params["startTime"] = int(start_dt.timestamp() * 1000)
         if end_dt is not None:
             params["endTime"] = int(end_dt.timestamp() * 1000)
 
-        if start_dt is not None and end_dt is not None:
-            span_days = max(int(((end_dt + timedelta(milliseconds=1)) - start_dt).days), 1)
+        if start_dt is not None and effective_end_dt is not None:
+            span_days = max(int(((effective_end_dt + timedelta(milliseconds=1)) - start_dt).days), 1)
+            if span_days > 1000:
+                raise RuntimeError(
+                    f"Binance spot window too large for single-request daily klines: {start_date} to "
+                    f"{end_date or effective_end_dt.strftime('%Y-%m-%d')}"
+                )
+        else:
+            span_days = None
+
+        if span_days is not None and end_dt is not None:
             params["limit"] = min(span_days, 1000)
         elif params:
             params["limit"] = 1000

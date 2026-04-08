@@ -38,6 +38,20 @@ class BinanceSpotProviderTests(unittest.TestCase):
             int(datetime(2024, 1, 2, 23, 59, 59, 999000, tzinfo=UTC).timestamp() * 1000),
         )
 
+    @patch("tradingagents.extensions.crypto.providers.binance_spot.requests.Session.get")
+    def test_get_stock_data_rejects_windows_that_exceed_single_request_capacity(self, mock_get):
+        exchange_info = Mock()
+        exchange_info.raise_for_status.return_value = None
+        exchange_info.json.return_value = {"symbols": [{"symbol": "BTCUSDT", "status": "TRADING"}]}
+        mock_get.return_value = exchange_info
+
+        provider = BinanceSpotProvider()
+
+        with self.assertRaisesRegex(RuntimeError, "Binance spot window too large"):
+            provider.get_stock_data("BTCUSDT", "2019-01-01", "2024-01-02")
+
+        self.assertEqual(mock_get.call_count, 1)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -9,6 +9,11 @@ from tradingagents.dataflows.interface import route_to_vendor
 from tradingagents.extensions.ashare.providers.akshare import AKShareProvider
 
 
+class _ExtensionSupportsFundamentals:
+    def supports_method(self, method: str) -> bool:
+        return method == "get_fundamentals"
+
+
 class AShareFundamentalsBridgeTests(unittest.TestCase):
     @patch.object(AKShareProvider, "_check_available", return_value=True)
     def test_get_fundamentals_formats_summary(self, _available):
@@ -40,7 +45,7 @@ class AShareFundamentalsBridgeTests(unittest.TestCase):
 
     def test_route_to_vendor_reaches_fundamentals_extension_path(self):
         with (
-            patch("tradingagents.dataflows.interface.resolve_extension", return_value=object()),
+            patch("tradingagents.dataflows.interface.resolve_extension", return_value=_ExtensionSupportsFundamentals()),
             patch("tradingagents.dataflows.interface.route_market_extension", return_value="FUND_OK") as mock_route,
         ):
             out = route_to_vendor("get_fundamentals", "600519", "2024-12-31")

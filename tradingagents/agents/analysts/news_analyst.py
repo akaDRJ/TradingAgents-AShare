@@ -5,13 +5,14 @@ from tradingagents.agents.utils.agent_utils import (
     get_language_instruction,
     get_news,
 )
-from tradingagents.dataflows.config import get_config
+from tradingagents.dataflows.config import set_config
 
 
 def create_news_analyst(llm):
     def news_analyst_node(state):
         current_date = state["trade_date"]
         instrument_context = build_instrument_context(state["company_of_interest"])
+        set_config({"active_instrument": state["company_of_interest"]})
 
         tools = [
             get_news,

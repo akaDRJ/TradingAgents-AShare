@@ -34,13 +34,15 @@ class CryptoInterfaceRoutingTests(unittest.TestCase):
                 }
             if method == "get_news":
                 return f"## {args[0]} News\n\n- Article: Extension seam routing works"
+            if method == "get_global_news":
+                return f"## Global {args[0]} News\n\n- Macro: Extension seam global routing works"
             return f"unsupported:{method}"
 
         register_extension(
             name="crypto_test",
             match_ticker=lambda ticker: str(ticker).upper().endswith("USDT"),
             detect_market=lambda ticker: Market.CRYPTO,
-            supports_method=lambda method: method in {"get_stock_data", "get_news"},
+            supports_method=lambda method: method in {"get_stock_data", "get_news", "get_global_news"},
             route_extension=fake_crypto_route,
         )
 
@@ -74,6 +76,22 @@ class CryptoInterfaceRoutingTests(unittest.TestCase):
         self.assertEqual(
             self.route_calls,
             [("get_news", ("BTCUSDT", "2024-01-01", "2024-01-31"), {})],
+        )
+
+    def test_crypto_global_news_uses_active_instrument_context_for_extension_routing(self):
+        with (
+            patch("tradingagents.dataflows.interface.get_config", return_value={"active_instrument": "BTCUSDT"}),
+            patch(
+                "tradingagents.dataflows.interface.get_vendor",
+                side_effect=AssertionError("crypto global news should not use stock vendors"),
+            ),
+        ):
+            result = route_to_vendor("get_global_news", "2024-01-31", 7, 5)
+
+        self.assertIn("Global BTCUSDT News", result)
+        self.assertEqual(
+            self.route_calls,
+            [("get_global_news", ("BTCUSDT", "2024-01-31", 7, 5), {})],
         )
 
 

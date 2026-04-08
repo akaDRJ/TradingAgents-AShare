@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
+from email.utils import parsedate_to_datetime
 from xml.etree import ElementTree
 
 import requests
@@ -18,9 +20,34 @@ class PublicNewsProvider:
         response.raise_for_status()
         return ElementTree.fromstring(response.content)
 
+    def _parse_pub_date(self, pub_date: str):
+        if not pub_date:
+            return None
+        try:
+            parsed = parsedate_to_datetime(pub_date)
+        except (TypeError, ValueError):
+            return None
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=UTC)
+        return parsed.astimezone(UTC)
+
+    def _filter_items_by_date(self, root, start_date: str, end_date: str, limit: int):
+        start_day = datetime.fromisoformat(start_date).date()
+        end_day = datetime.fromisoformat(end_date).date()
+        items = []
+        for item in root.findall(".//item"):
+            published = self._parse_pub_date(item.findtext("pubDate", default=""))
+            if published is None:
+                continue
+            if start_day <= published.date() <= end_day:
+                items.append(item)
+            if len(items) >= limit:
+                break
+        return items
+
     def get_news(self, ticker: str, start_date: str, end_date: str, **kwargs):
         root = self._fetch_feed(f"{ticker} crypto OR cryptocurrency")
-        items = root.findall(".//item")[:8]
+        items = self._filter_items_by_date(root, start_date, end_date, limit=8)
         lines = [f"## {ticker} News, from {start_date} to {end_date}:", ""]
         for item in items:
             title = item.findtext("title", default="Untitled")
@@ -36,7 +63,8 @@ class PublicNewsProvider:
 
     def get_global_news(self, curr_date: str, look_back_days: int = 7, limit: int = 5, **kwargs):
         root = self._fetch_feed("bitcoin OR ethereum OR crypto market")
-        items = root.findall(".//item")[:limit]
+        start_date = (datetime.fromisoformat(curr_date) - timedelta(days=look_back_days)).date().isoformat()
+        items = self._filter_items_by_date(root, start_date, curr_date, limit=limit)
         lines = [f"## Global Crypto News up to {curr_date}:", ""]
         for item in items:
             lines.append(f"- {item.findtext('title', default='Untitled')}")

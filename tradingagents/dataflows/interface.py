@@ -162,7 +162,13 @@ def get_vendor(category: str, method: str = None) -> str:
 
 
 def _route_market_extension_if_available(method: str, *args, **kwargs):
-    ticker = _get_ticker_from_args(args, kwargs)
+    inject_ticker_into_args = False
+    if method == "get_global_news":
+        ticker = _get_global_news_context_ticker(kwargs)
+        inject_ticker_into_args = ticker is not None
+    else:
+        ticker = _get_ticker_from_args(args, kwargs)
+
     if not ticker:
         return None
 
@@ -175,6 +181,11 @@ def _route_market_extension_if_available(method: str, *args, **kwargs):
 
     if method == "get_indicators":
         return get_stock_stats_indicators_window(*args, **kwargs)
+
+    if inject_ticker_into_args:
+        # Global news tools do not carry ticker in positional args; inject the
+        # active instrument so the shared extension seam can route by market.
+        return route_market_extension(method, ticker, *args, **kwargs)
 
     return route_market_extension(method, *args, **kwargs)
 
@@ -218,3 +229,16 @@ def _get_ticker_from_args(args, kwargs) -> str | None:
     if args:
         return str(args[0])
     return kwargs.get("symbol") or kwargs.get("ticker")
+
+
+def _get_global_news_context_ticker(kwargs) -> str | None:
+    ticker = kwargs.get("symbol") or kwargs.get("ticker")
+    if ticker:
+        return str(ticker)
+
+    active = get_config().get("active_instrument")
+    if active is None:
+        return None
+
+    active_ticker = str(active).strip()
+    return active_ticker or None

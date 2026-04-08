@@ -1,9 +1,8 @@
 from tradingagents.extensions.market_ext import get_extension, register_extension
-from tradingagents.extensions.market_ext.types import Market
 
 from . import providers  # noqa: F401
 from .normalize import detect_market, normalize_ticker
-from .policy import get_provider_chain, get_unsupported_message, is_method_supported
+from .policy import DEFERRED_UPSTREAM_METHODS, get_provider_chain, get_unsupported_message, is_method_supported
 from .registry import get_registry, register_provider
 from .routing import route_extension
 
@@ -29,7 +28,7 @@ def ensure_registered() -> None:
         name="crypto",
         match_ticker=lambda ticker: detect_market(ticker).value == "crypto",
         detect_market=detect_market,
-        supports_method=lambda method: is_method_supported(method, Market.CRYPTO),
+        supports_method=lambda method: method not in DEFERRED_UPSTREAM_METHODS,
         route_extension=route_extension,
     )
 

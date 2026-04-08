@@ -6,7 +6,7 @@ from unittest.mock import patch
 import tradingagents.dataflows.interface as interface
 from tradingagents.extensions import ashare, crypto
 from tradingagents.dataflows.interface import route_to_vendor
-from tradingagents.extensions.market_ext import get_extension, reset_extensions_for_test
+from tradingagents.extensions.market_ext import get_extension, reset_extensions_for_test, resolve_extension
 from tradingagents.extensions.crypto.normalize import detect_market
 from tradingagents.extensions.market_ext.types import Market
 
@@ -43,7 +43,30 @@ class CryptoExtensionRegistrationTests(unittest.TestCase):
 
 
 class CryptoNewsRoutingTests(unittest.TestCase):
+    def test_crypto_unsupported_method_returns_extension_message(self):
+        extension = resolve_extension("BTCUSDT")
+        self.assertIsNotNone(extension)
+        self.assertEqual(extension.name, "crypto")
+
+        with (
+            patch.dict(
+                interface.VENDOR_METHODS["get_insider_transactions"],
+                {"alpha_vantage": lambda *args, **kwargs: "UPSTREAM_INSIDER_RESULT"},
+                clear=True,
+            ),
+            patch("tradingagents.dataflows.interface.get_vendor", return_value="alpha_vantage"),
+        ):
+            out = route_to_vendor("get_insider_transactions", "BTCUSDT")
+
+        self.assertIn("not supported", out)
+        self.assertIn("crypto", out)
+
     def test_route_to_vendor_skips_extension_for_unimplemented_crypto_news(self):
+        extension = resolve_extension("BTCUSDT")
+        self.assertIsNotNone(extension)
+        self.assertEqual(extension.name, "crypto")
+        self.assertIsNotNone(get_extension("crypto"))
+
         with (
             patch("tradingagents.dataflows.interface.route_market_extension", side_effect=AssertionError("crypto news should skip extension routing")),
             patch.dict(interface.VENDOR_METHODS["get_news"], {"alpha_vantage": lambda *args, **kwargs: "UPSTREAM_NEWS"}, clear=True),

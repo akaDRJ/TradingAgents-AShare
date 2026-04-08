@@ -1,5 +1,7 @@
 from tradingagents.extensions.market_ext.types import Market
 
+DEFERRED_UPSTREAM_METHODS = {"get_news", "get_global_news"}
+
 
 MARKET_POLICY = {
     Market.CRYPTO: {

@@ -5,8 +5,20 @@ DEFERRED_UPSTREAM_METHODS = set()
 
 MARKET_POLICY = {
     Market.CRYPTO: {
-        "get_stock_data": ["binance_spot", "coingecko"],
-        "get_indicators": ["binance_spot", "coingecko"],
+        "get_stock_data": [
+            "binance_spot",
+            "binance_futures",
+            "gate_spot",
+            "gate_futures",
+            "coingecko",
+        ],
+        "get_indicators": [
+            "binance_spot",
+            "binance_futures",
+            "gate_spot",
+            "gate_futures",
+            "coingecko",
+        ],
         "get_fundamentals": ["coingecko"],
         "get_balance_sheet": None,
         "get_cashflow": None,

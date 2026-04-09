@@ -7,10 +7,13 @@ import requests
 
 from tradingagents.extensions.crypto.normalize import normalize_ticker
 
+from .base import chunk_date_range
+
 
 class CoinGeckoProvider:
     name = "coingecko"
     base_url = "https://api.coingecko.com/api/v3"
+    max_points_per_request = 365
 
     def __init__(self):
         self.session = requests.Session()
@@ -69,36 +72,45 @@ class CoinGeckoProvider:
     def get_stock_data(self, ticker: str, start_date: str | None = None, end_date: str | None = None, **kwargs):
         instrument = normalize_ticker(ticker)
         coin_id = self._coin_id(ticker)
-        params = {"vs_currency": self._vs_currency(instrument.quote_symbol)}
-        range_params = self._range_params(start_date, end_date)
-        path = f"/coins/{coin_id}/market_chart"
-        if range_params:
-            path = f"/coins/{coin_id}/market_chart/range"
-            params.update(range_params)
-        else:
-            params.update({"days": 365, "interval": "daily"})
-
-        payload = self._get(path, params)
-        prices = payload.get("prices", [])
-        volumes = payload.get("total_volumes", [])
         data = []
-        for index, row in enumerate(prices):
-            volume = volumes[index][1] if index < len(volumes) else 0.0
-            row_date = datetime.fromtimestamp(row[0] / 1000, UTC).strftime("%Y-%m-%d")
-            if start_date and row_date < start_date:
-                continue
-            if end_date and row_date > end_date:
-                continue
-            data.append(
-                {
-                    "date": row_date,
-                    "open": float(row[1]),
-                    "high": float(row[1]),
-                    "low": float(row[1]),
-                    "close": float(row[1]),
-                    "volume": float(volume),
-                }
-            )
+        windows = chunk_date_range(
+            start_date,
+            end_date,
+            max_points=self.max_points_per_request,
+        )
+        if not windows:
+            return {"ticker": ticker, "data": data, "provider": self.name, "source": "coingecko"}
+
+        for chunk_start, chunk_end in windows:
+            params = {"vs_currency": self._vs_currency(instrument.quote_symbol)}
+            range_params = self._range_params(chunk_start, chunk_end)
+            path = f"/coins/{coin_id}/market_chart"
+            if range_params:
+                path = f"/coins/{coin_id}/market_chart/range"
+                params.update(range_params)
+            else:
+                params.update({"days": 365, "interval": "daily"})
+
+            payload = self._get(path, params)
+            prices = payload.get("prices", [])
+            volumes = payload.get("total_volumes", [])
+            for index, row in enumerate(prices):
+                volume = volumes[index][1] if index < len(volumes) else 0.0
+                row_date = datetime.fromtimestamp(row[0] / 1000, UTC).strftime("%Y-%m-%d")
+                if start_date and row_date < start_date:
+                    continue
+                if end_date and row_date > end_date:
+                    continue
+                data.append(
+                    {
+                        "date": row_date,
+                        "open": float(row[1]),
+                        "high": float(row[1]),
+                        "low": float(row[1]),
+                        "close": float(row[1]),
+                        "volume": float(volume),
+                    }
+                )
         return {"ticker": ticker, "data": data, "provider": self.name, "source": "coingecko"}
 
     def get_fundamentals(self, ticker: str, curr_date: str | None = None, **kwargs):

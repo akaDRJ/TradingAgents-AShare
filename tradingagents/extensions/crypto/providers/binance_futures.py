@@ -7,10 +7,10 @@ import requests
 from .base import chunk_date_range
 
 
-class BinanceSpotProvider:
-    name = "binance_spot"
-    base_url = "https://api.binance.com"
-    max_points_per_request = 1000
+class BinanceFuturesProvider:
+    name = "binance_futures"
+    base_url = "https://fapi.binance.com"
+    max_points_per_request = 1500
 
     def __init__(self):
         self.session = requests.Session()
@@ -21,10 +21,10 @@ class BinanceSpotProvider:
         return response.json()
 
     def _ensure_symbol(self, symbol: str) -> None:
-        payload = self._get("/api/v3/exchangeInfo", {"symbol": symbol})
+        payload = self._get("/fapi/v1/exchangeInfo", {"symbol": symbol})
         symbols = payload.get("symbols", [])
         if not symbols or symbols[0].get("status") != "TRADING":
-            raise RuntimeError(f"Binance spot symbol unavailable: {symbol}")
+            raise RuntimeError(f"Binance futures symbol unavailable: {symbol}")
 
     def _window_params(self, start_date: str | None, end_date: str | None) -> dict[str, int]:
         params: dict[str, int] = {}
@@ -34,21 +34,15 @@ class BinanceSpotProvider:
             if end_date
             else None
         )
-        effective_end_dt = end_dt
-        if start_dt is not None and effective_end_dt is None:
-            effective_end_dt = datetime.now(UTC)
+        effective_end_dt = end_dt or datetime.now(UTC)
 
         if start_dt is not None:
             params["startTime"] = int(start_dt.timestamp() * 1000)
         if end_dt is not None:
             params["endTime"] = int(end_dt.timestamp() * 1000)
 
-        if start_dt is not None and effective_end_dt is not None:
+        if start_dt is not None:
             span_days = max(int(((effective_end_dt + timedelta(milliseconds=1)) - start_dt).days), 1)
-        else:
-            span_days = None
-
-        if span_days is not None and end_dt is not None:
             params["limit"] = min(span_days, self.max_points_per_request)
         elif params:
             params["limit"] = self.max_points_per_request
@@ -64,14 +58,14 @@ class BinanceSpotProvider:
             max_points=self.max_points_per_request,
         )
         if not windows:
-            return {"ticker": ticker, "data": data, "provider": self.name, "source": "binance_spot"}
+            return {"ticker": ticker, "data": data, "provider": self.name, "source": "binance_futures"}
 
         for chunk_start, chunk_end in windows:
             params = {"symbol": ticker, "interval": "1d"}
             params.update(self._window_params(chunk_start, chunk_end))
             if "limit" not in params:
                 params["limit"] = 365
-            rows = self._get("/api/v3/klines", params)
+            rows = self._get("/fapi/v1/klines", params)
             for row in rows:
                 row_date = datetime.fromtimestamp(row[0] / 1000, UTC).strftime("%Y-%m-%d")
                 if start_date and row_date < start_date:
@@ -88,4 +82,4 @@ class BinanceSpotProvider:
                         "volume": float(row[5]),
                     }
                 )
-        return {"ticker": ticker, "data": data, "provider": self.name, "source": "binance_spot"}
+        return {"ticker": ticker, "data": data, "provider": self.name, "source": "binance_futures"}

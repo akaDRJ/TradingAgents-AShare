@@ -74,6 +74,13 @@ def _load_extension_ohlcv(symbol: str, start_str: str, end_str: str) -> pd.DataF
     return df[["Date", "Open", "High", "Low", "Close", "Volume"]]
 
 
+def _history_window_for_symbol(symbol: str, curr_date_dt: pd.Timestamp) -> tuple[str, str]:
+    end_dt = curr_date_dt.normalize()
+    start_dt = end_dt - pd.DateOffset(years=5)
+
+    return start_dt.strftime("%Y-%m-%d"), end_dt.strftime("%Y-%m-%d")
+
+
 def load_ohlcv(symbol: str, curr_date: str) -> pd.DataFrame:
     """Fetch OHLCV data with caching, filtered to prevent look-ahead bias.
 
@@ -82,16 +89,21 @@ def load_ohlcv(symbol: str, curr_date: str) -> pd.DataFrame:
     """
     config = get_config()
     curr_date_dt = pd.to_datetime(curr_date)
+    start_str, end_str = _history_window_for_symbol(symbol, curr_date_dt)
+    extension = resolve_extension(symbol)
 
-    today_date = pd.Timestamp.today()
-    start_date = today_date - pd.DateOffset(years=5)
-    start_str = start_date.strftime("%Y-%m-%d")
-    end_str = today_date.strftime("%Y-%m-%d")
+    os.makedirs(config["data_cache_dir"], exist_ok=True)
+    data_file = os.path.join(
+        config["data_cache_dir"],
+        f"{symbol}-extension-data-{start_str}-{end_str}.csv",
+    )
 
-    if resolve_extension(symbol) is not None:
+    if os.path.exists(data_file):
+        data = pd.read_csv(data_file, on_bad_lines="skip")
+    elif extension is not None:
         data = _load_extension_ohlcv(symbol, start_str, end_str)
+        data.to_csv(data_file, index=False)
     else:
-        os.makedirs(config["data_cache_dir"], exist_ok=True)
         data_file = os.path.join(
             config["data_cache_dir"],
             f"{symbol}-YFin-data-{start_str}-{end_str}.csv",

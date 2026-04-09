@@ -20,13 +20,16 @@ def route_extension(method: str, *args, **kwargs):
     if not is_method_supported(method, market):
         return get_unsupported_message(method, market)
 
+    errors: list[str] = []
     for provider in get_provider_chain(method, market):
         impl = get_registry().get(provider, method)
         if impl is None:
             continue
         try:
             return impl(instrument.trading_pair, *args[1:], **kwargs)
-        except Exception:
+        except Exception as exc:
+            errors.append(f"{provider}: {exc}")
             continue
 
-    return f"Error: All providers failed for '{method}' on '{instrument.trading_pair}'"
+    detail = "; ".join(errors) if errors else "no provider implementation available"
+    return f"Error: All providers failed for '{method}' on '{instrument.trading_pair}': {detail}"

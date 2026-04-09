@@ -39,18 +39,35 @@ class BinanceSpotProviderTests(unittest.TestCase):
         )
 
     @patch("tradingagents.extensions.crypto.providers.binance_spot.requests.Session.get")
-    def test_get_stock_data_rejects_windows_that_exceed_single_request_capacity(self, mock_get):
+    def test_get_stock_data_chunks_windows_that_exceed_single_request_capacity(self, mock_get):
         exchange_info = Mock()
         exchange_info.raise_for_status.return_value = None
         exchange_info.json.return_value = {"symbols": [{"symbol": "BTCUSDT", "status": "TRADING"}]}
-        mock_get.return_value = exchange_info
+
+        first_chunk = Mock()
+        first_chunk.raise_for_status.return_value = None
+        first_chunk.json.return_value = [
+            [1609459200000, "29000.0", "29500.0", "28800.0", "29300.0", "100.0", 1609545599999, "0", 0, "0", "0", "0"]
+        ]
+
+        second_chunk = Mock()
+        second_chunk.raise_for_status.return_value = None
+        second_chunk.json.return_value = [
+            [1695859200000, "27000.0", "27500.0", "26800.0", "27200.0", "200.0", 1695945599999, "0", 0, "0", "0", "0"]
+        ]
+
+        mock_get.side_effect = [exchange_info, first_chunk, second_chunk]
 
         provider = BinanceSpotProvider()
+        result = provider.get_stock_data("BTCUSDT", "2021-01-01", "2023-12-31")
 
-        with self.assertRaisesRegex(RuntimeError, "Binance spot window too large"):
-            provider.get_stock_data("BTCUSDT", "2019-01-01", "2024-01-02")
-
-        self.assertEqual(mock_get.call_count, 1)
+        self.assertEqual(result["ticker"], "BTCUSDT")
+        self.assertEqual(len(result["data"]), 2)
+        self.assertEqual(mock_get.call_count, 3)
+        first_params = mock_get.call_args_list[1].kwargs["params"]
+        second_params = mock_get.call_args_list[2].kwargs["params"]
+        self.assertEqual(first_params["limit"], 1000)
+        self.assertGreater(second_params["startTime"], first_params["startTime"])
 
 
 if __name__ == "__main__":

@@ -2,7 +2,13 @@
 
 ## Summary
 
-This update adds a shared market-extension seam, keeps the A-share path upstream-compatible, and introduces first-version crypto spot analysis support.
+This update adds a shared market-extension seam, keeps the A-share path upstream-compatible, introduces first-version crypto spot analysis support, and renames the fork to better match its actual scope.
+
+## Repository Identity
+
+- Previous fork name: `TradingAgents-AShare`
+- Current fork name: `TradingAgents-MultiMarket`
+- Rationale: the fork now covers both A-share and crypto spot workflows, so the old name had become too narrow.
 
 ## Major Changes
 
@@ -52,3 +58,16 @@ Result: `Ran 48 tests ... OK`
 ## Follow-up Note
 
 - Refreshed `uv.lock` so it matches the current project dependency set, including the A-share provider stack already declared in `pyproject.toml`.
+
+## Short Announcement Copy
+
+`TradingAgents-MultiMarket` is our upstream-compatible fork of `TauricResearch/TradingAgents`.
+
+This update introduces a shared market-extension seam, keeps the A-share path narrow and maintainable, and adds first-version crypto spot analysis support.
+
+Current coverage includes:
+- A-share market detection, normalization, price-data routing, indicators, fundamentals, and news
+- Crypto spot detection, normalization, Binance Spot market data, CoinGecko fundamentals, and lightweight crypto news routing
+- Market-aware analyst guidance for crypto fundamentals and crypto social analysis
+
+The guiding principle remains unchanged: keep diffs narrow, preserve Docker-safe runtime behavior, and extend upstream through modular market-specific seams instead of large rewrites.

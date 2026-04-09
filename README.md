@@ -97,23 +97,30 @@ Our framework decomposes complex trading tasks into specialized roles. This ensu
   <img src="assets/risk.png" width="70%" style="display: inline-block; margin: 0 2%;">
 </p>
 
-## Local Fork Note: A-share Extension Status
+## Local Fork Note: Multi-Market Extension Status
 
-This local fork has been extended with a narrow A-share capability layer while keeping the upstream architecture largely intact.
+This fork is maintained as **TradingAgents-MultiMarket**, an upstream-compatible extension of `TauricResearch/TradingAgents` that adds market-specific capabilities without rewriting the core graph or analyst topology.
 
-Current local status:
+Current local scope:
+- A shared `market_ext` dispatcher that keeps market-specific logic inside extension modules
 - A-share market detection and ticker normalization
-- Real A-share `get_stock_data` path (AKShare with fallback handling)
-- A-share `get_indicators` bridged onto the upstream stockstats path
-- A-share fundamentals bridge for `get_fundamentals`, `get_balance_sheet`, `get_cashflow`, and `get_income_statement`
-- A-share `get_news` bridge via AKShare `stock_news_em`
+- Real A-share `get_stock_data` routing with provider fallback handling
+- A-share indicator reuse through the upstream stockstats path
+- A-share bridges for `get_fundamentals`, `get_balance_sheet`, `get_cashflow`, `get_income_statement`, and `get_news`
+- Crypto spot market detection and symbol normalization
+- Crypto spot market-data routing through Binance Spot public endpoints with CoinGecko fallback
+- Crypto fundamentals routing through CoinGecko
+- Crypto news/global-news routing through a lightweight public RSS-backed provider
+- Market-aware analyst prompt guidance for crypto fundamentals and crypto social analysis
 
-Design constraint for this fork:
+Design constraints for this fork:
 - keep diffs narrow
 - prefer upstream-compatible seams over large rewrites
+- keep Docker runtime self-contained
+- avoid host-only runtime dependencies such as `autocli` or `agent-reach`
 - avoid pulling in proprietary `TradingAgents-CN` web/app layers
 
-See `archive/reference/projects/tradingagents-ashare-acceptance-2026-04-06.md` in the workspace for the local acceptance record.
+See `docs/release-notes/2026-04-09-market-extensions-and-crypto.md` for the latest local release summary.
 
 ## Installation and CLI
 

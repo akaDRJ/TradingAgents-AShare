@@ -7,7 +7,10 @@ class ProviderOptionsTests(unittest.TestCase):
     def test_provider_choices_include_upstream_provider_expansions(self):
         providers = {provider for _, provider, _ in PROVIDER_CHOICES}
 
-        self.assertTrue({"deepseek", "qwen", "glm", "azure"}.issubset(providers))
+        self.assertTrue({"deepseek", "qwen", "glm", "azure", "xiaomi"}.issubset(providers))
+
+    def test_xiaomi_provider_uses_runtime_configurable_endpoint(self):
+        self.assertIsNone(get_provider_backend_url("xiaomi"))
 
     def test_backend_url_lookup_handles_new_provider_endpoints(self):
         self.assertEqual(

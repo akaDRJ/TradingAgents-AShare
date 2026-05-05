@@ -14,6 +14,7 @@ PROVIDER_CHOICES = (
     ("Google", "google", None),
     ("Anthropic", "anthropic", "https://api.anthropic.com/"),
     ("MiniMax", "minimax", "https://api.minimaxi.com/anthropic"),
+    ("Xiaomi MiMo", "xiaomi", None),
     ("xAI", "xai", "https://api.x.ai/v1"),
     ("DeepSeek", "deepseek", "https://api.deepseek.com"),
     ("Qwen", "qwen", "https://dashscope.aliyuncs.com/compatible-mode/v1"),

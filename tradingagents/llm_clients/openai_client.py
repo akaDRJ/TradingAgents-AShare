@@ -116,6 +116,7 @@ _PROVIDER_CONFIG = {
     "qwen": ("https://dashscope-intl.aliyuncs.com/compatible-mode/v1", "DASHSCOPE_API_KEY"),
     "glm": ("https://api.z.ai/api/paas/v4/", "ZHIPU_API_KEY"),
     "openrouter": ("https://openrouter.ai/api/v1", "OPENROUTER_API_KEY"),
+    "xiaomi": ("https://api.xiaomimimo.com/v1", "XIAOMI_API_KEY"),
     "ollama": ("http://localhost:11434/v1", None),
 }
 
@@ -149,7 +150,8 @@ class OpenAIClient(BaseLLMClient):
         # provider default so users can route through their own gateway.
         if self.provider in _PROVIDER_CONFIG:
             default_base, api_key_env = _PROVIDER_CONFIG[self.provider]
-            llm_kwargs["base_url"] = self.base_url or default_base
+            env_base = os.environ.get(f"{self.provider.upper()}_BASE_URL")
+            llm_kwargs["base_url"] = self.base_url or env_base or default_base
             if api_key_env:
                 api_key = os.environ.get(api_key_env)
                 if api_key:

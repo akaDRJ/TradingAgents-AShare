@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Breaking changes within the 0.x line are called out explicitly.
 
+## [Unreleased]
+
+### Added
+
+- **Xiaomi MiMo provider support** through the OpenAI-compatible chat-completions
+  client, including shared CLI/Telegram provider options, model catalog entries,
+  and `XIAOMI_API_KEY` / optional `XIAOMI_BASE_URL` environment configuration.
+
 ## [0.2.4] — 2026-04-25
 
 ### Added

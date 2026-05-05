@@ -116,6 +116,19 @@ MODEL_OPTIONS: ProviderModeOptions = {
             ("MiniMax-M2.5 - Strong reasoning, cost-effective", "MiniMax-M2.5"),
         ],
     },
+    "xiaomi": {
+        "quick": [
+            ("MiMo V2.5 Pro - Xiaomi MiMo, 1M ctx", "mimo-v2.5-pro"),
+            ("MiMo V2.5 - Xiaomi MiMo", "mimo-v2.5"),
+            ("MiMo V2 Pro - Xiaomi MiMo", "mimo-v2-pro"),
+            ("MiMo V2 Flash - Xiaomi MiMo", "mimo-v2-flash"),
+        ],
+        "deep": [
+            ("MiMo V2.5 Pro - Xiaomi MiMo, 1M ctx", "mimo-v2.5-pro"),
+            ("MiMo V2.5 - Xiaomi MiMo", "mimo-v2.5"),
+            ("MiMo V2 Pro - Xiaomi MiMo", "mimo-v2-pro"),
+        ],
+    },
     "deepseek": {
         "quick": [
             ("DeepSeek V4 Flash - Latest V4 fast model", "deepseek-v4-flash"),

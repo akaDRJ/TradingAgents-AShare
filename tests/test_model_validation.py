@@ -1,5 +1,6 @@
 import unittest
 import warnings
+from unittest.mock import patch
 
 import pytest
 
@@ -61,3 +62,30 @@ class ModelValidationTests(unittest.TestCase):
         self.assertEqual(client.provider, "minimax")
         self.assertEqual(client.base_url, "https://api.minimaxi.com/anthropic")
         self.assertEqual(client.kwargs["api_key"], "test-key")
+
+    def test_xiaomi_models_are_validator_approved(self):
+        known = get_known_models()
+
+        self.assertIn("xiaomi", known)
+        self.assertIn("mimo-v2.5-pro", known["xiaomi"])
+        self.assertTrue(validate_model("xiaomi", "mimo-v2.5-pro"))
+
+    def test_xiaomi_factory_uses_openai_compatible_chat_client(self):
+        with patch.dict(
+            "os.environ",
+            {
+                "XIAOMI_API_KEY": "xiaomi-test-key",
+                "XIAOMI_BASE_URL": "https://xiaomi-proxy.example/v1",
+            },
+            clear=False,
+        ), patch("tradingagents.llm_clients.openai_client.NormalizedChatOpenAI") as chat_cls:
+            client = create_llm_client("xiaomi", "mimo-v2.5-pro")
+            llm = client.get_llm()
+
+        self.assertIs(llm, chat_cls.return_value)
+        self.assertEqual(client.provider, "xiaomi")
+        chat_cls.assert_called_once_with(
+            model="mimo-v2.5-pro",
+            base_url="https://xiaomi-proxy.example/v1",
+            api_key="xiaomi-test-key",
+        )

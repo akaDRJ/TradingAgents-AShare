@@ -11,6 +11,7 @@ import os
 from tradingagents.extensions.market_ext import resolve_extension, route_market_extension
 
 from .config import get_config
+from .utils import safe_ticker_component
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +88,10 @@ def load_ohlcv(symbol: str, curr_date: str) -> pd.DataFrame:
     Downloads 5 years of data up to today and caches per symbol for the default
     yfinance path.
     """
+    # Reject ticker values that would escape the cache directory when
+    # interpolated into the cache filename (e.g. ``../../tmp/x``).
+    safe_symbol = safe_ticker_component(symbol)
+
     config = get_config()
     curr_date_dt = pd.to_datetime(curr_date)
     start_str, end_str = _history_window_for_symbol(symbol, curr_date_dt)
@@ -96,7 +101,7 @@ def load_ohlcv(symbol: str, curr_date: str) -> pd.DataFrame:
     if extension is not None:
         data_file = os.path.join(
             config["data_cache_dir"],
-            f"{symbol}-extension-data-{start_str}-{end_str}.csv",
+            f"{safe_symbol}-extension-data-{start_str}-{end_str}.csv",
         )
         if os.path.exists(data_file):
             data = pd.read_csv(data_file, on_bad_lines="skip", encoding="utf-8")
@@ -106,7 +111,7 @@ def load_ohlcv(symbol: str, curr_date: str) -> pd.DataFrame:
     else:
         data_file = os.path.join(
             config["data_cache_dir"],
-            f"{symbol}-YFin-data-{start_str}-{end_str}.csv",
+            f"{safe_symbol}-YFin-data-{start_str}-{end_str}.csv",
         )
 
         if os.path.exists(data_file):

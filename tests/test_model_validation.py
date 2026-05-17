@@ -56,12 +56,22 @@ class ModelValidationTests(unittest.TestCase):
 
                 self.assertEqual(caught, [])
 
-    def test_minimax_factory_uses_anthropic_compatible_client(self):
-        client = create_llm_client("minimax", "MiniMax-M2.7-highspeed", api_key="test-key")
+    def test_minimax_factory_uses_openai_compatible_client(self):
+        with patch.dict(
+            "os.environ",
+            {"MINIMAX_API_KEY": "test-key"},
+            clear=False,
+        ), patch("tradingagents.llm_clients.openai_client.MinimaxChatOpenAI") as chat_cls:
+            client = create_llm_client("minimax", "MiniMax-M2.7-highspeed")
+            llm = client.get_llm()
 
+        self.assertIs(llm, chat_cls.return_value)
         self.assertEqual(client.provider, "minimax")
-        self.assertEqual(client.base_url, "https://api.minimaxi.com/anthropic")
-        self.assertEqual(client.kwargs["api_key"], "test-key")
+        chat_cls.assert_called_once_with(
+            model="MiniMax-M2.7-highspeed",
+            base_url="https://api.minimax.io/v1",
+            api_key="test-key",
+        )
 
     def test_xiaomi_models_are_validator_approved(self):
         known = get_known_models()

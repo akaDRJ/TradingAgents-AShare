@@ -58,7 +58,7 @@ class TelegramServiceTests(unittest.TestCase):
 
             self.assertEqual(session.request.llm_provider, "anthropic")
             self.assertEqual(session.request.quick_model, "claude-sonnet-4-6")
-            self.assertEqual(session.request.deep_model, "claude-opus-4-6")
+            self.assertEqual(session.request.deep_model, "claude-opus-4-7")
 
     def test_apply_choice_updates_research_depth(self):
         request = build_default_request("SPY", "2026-04-09")

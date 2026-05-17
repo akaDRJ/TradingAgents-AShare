@@ -4,7 +4,11 @@ from .base_client import BaseLLMClient
 
 # Providers that use the OpenAI-compatible chat completions API
 _OPENAI_COMPATIBLE = (
-    "openai", "xai", "deepseek", "qwen", "glm", "ollama", "openrouter", "xiaomi",
+    "openai", "xai", "deepseek",
+    "qwen", "qwen-cn",
+    "glm", "glm-cn",
+    "minimax", "minimax-cn",
+    "ollama", "openrouter", "xiaomi",
 )
 
 
@@ -41,19 +45,6 @@ def create_llm_client(
     if provider_lower == "anthropic":
         from .anthropic_client import AnthropicClient
         return AnthropicClient(model, base_url, **kwargs)
-
-    if provider_lower == "minimax":
-        import os
-        from .anthropic_client import AnthropicClient
-
-        api_key = kwargs.pop("api_key", None) or os.environ.get("MINIMAX_API_KEY")
-        return AnthropicClient(
-            model,
-            base_url="https://api.minimaxi.com/anthropic",
-            provider="minimax",
-            api_key=api_key,
-            **kwargs,
-        )
 
     if provider_lower == "google":
         from .google_client import GoogleClient

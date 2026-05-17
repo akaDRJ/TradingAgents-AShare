@@ -15,11 +15,11 @@ class ProviderOptionsTests(unittest.TestCase):
     def test_backend_url_lookup_handles_new_provider_endpoints(self):
         self.assertEqual(
             get_provider_backend_url("qwen"),
-            "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
         )
         self.assertEqual(
             get_provider_backend_url("glm"),
-            "https://open.bigmodel.cn/api/paas/v4/",
+            "https://api.z.ai/api/paas/v4/",
         )
         self.assertIsNone(get_provider_backend_url("azure"))
 

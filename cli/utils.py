@@ -14,6 +14,7 @@ from tradingagents.app.options import (
 )
 from tradingagents.llm_clients.api_key_env import get_api_key_env
 from tradingagents.llm_clients.model_catalog import get_model_options
+from tradingagents.extensions.market_ext.types import Market
 
 console = Console()
 
@@ -71,6 +72,14 @@ def normalize_ticker_symbol(ticker: str) -> str:
 
 def detect_asset_type(ticker: str) -> AssetType:
     normalized_ticker = ticker.strip().upper()
+    try:
+        from tradingagents.extensions.crypto.normalize import detect_market
+
+        if detect_market(normalized_ticker) == Market.CRYPTO:
+            return AssetType.CRYPTO
+    except ImportError:
+        pass
+
     if normalized_ticker.endswith(CRYPTO_SUFFIXES):
         return AssetType.CRYPTO
     return AssetType.STOCK

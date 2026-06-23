@@ -1,12 +1,13 @@
 from langchain_core.messages import AIMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+
 from tradingagents.agents.utils.agent_utils import (
-    build_instrument_context,
     build_market_specific_instruction,
     get_balance_sheet,
     get_cashflow,
     get_fundamentals,
     get_income_statement,
+    get_instrument_context_from_state,
     get_language_instruction,
 )
 from tradingagents.extensions.market_ext import build_analyst_report_for_ticker
@@ -15,7 +16,7 @@ from tradingagents.extensions.market_ext import build_analyst_report_for_ticker
 def create_fundamentals_analyst(llm):
     def fundamentals_analyst_node(state):
         current_date = state["trade_date"]
-        instrument_context = build_instrument_context(state["company_of_interest"])
+        instrument_context = get_instrument_context_from_state(state)
 
         prebuilt_report = build_analyst_report_for_ticker(
             state["company_of_interest"],
@@ -54,8 +55,9 @@ def create_fundamentals_analyst(llm):
                     " will help where you left off. Execute what you can to make progress."
                     " If you or any other assistant has the FINAL TRANSACTION PROPOSAL: **BUY/HOLD/SELL** or deliverable,"
                     " prefix your response with FINAL TRANSACTION PROPOSAL: **BUY/HOLD/SELL** so the team knows to stop."
-                    " You have access to the following tools: {tool_names}.\n{system_message}"
-                    "For your reference, the current date is {current_date}. {instrument_context}",
+                    " You have access to the following tools: {tool_names}."
+                    " Today's date is {current_date}; treat it as 'now' for all analysis and tool-call date ranges. {instrument_context}\n"
+                    "{system_message}",
                 ),
                 MessagesPlaceholder(variable_name="messages"),
             ]

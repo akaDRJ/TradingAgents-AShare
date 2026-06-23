@@ -7,9 +7,11 @@ from __future__ import annotations
 
 import hashlib
 import sqlite3
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Generator
+
+from langgraph.checkpoint.sqlite import SqliteSaver
 
 from tradingagents.dataflows.utils import safe_ticker_component
 
@@ -29,15 +31,8 @@ def thread_id(ticker: str, date: str) -> str:
 
 
 @contextmanager
-def get_checkpointer(data_dir: str | Path, ticker: str) -> Generator[Any, None, None]:
+def get_checkpointer(data_dir: str | Path, ticker: str) -> Generator[SqliteSaver, None, None]:
     """Context manager yielding a SqliteSaver backed by a per-ticker DB."""
-    try:
-        from langgraph.checkpoint.sqlite import SqliteSaver
-    except ImportError as exc:
-        raise RuntimeError(
-            "Checkpoint resume requires the optional 'langgraph-checkpoint-sqlite' package."
-        ) from exc
-
     db = _db_path(data_dir, ticker)
     conn = sqlite3.connect(str(db), check_same_thread=False)
     try:
